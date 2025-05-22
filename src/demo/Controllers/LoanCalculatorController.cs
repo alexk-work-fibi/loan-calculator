@@ -10,6 +10,7 @@ namespace demo.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class LoanCalculatorController : ControllerBase
     {
         private readonly IMongoCollection<LoanCalculationResult> _loanCalculations;
@@ -108,14 +109,7 @@ namespace demo.Controllers
             
             _logger.LogInformation("Fetched payments: {@PaymentSchedule}", result.PaymentSchedule);
 
-            return Ok(new
-            {
-                LoanAmount = result.LoanAmount,
-                InterestRate = result.InterestRate,
-                TermInYears = result.TermInYears,
-                MonthlyPayment = result.MonthlyPayment,
-                PaymentSchedule = result.PaymentSchedule
-            });
+            return Ok(result);
         }
     }
 }

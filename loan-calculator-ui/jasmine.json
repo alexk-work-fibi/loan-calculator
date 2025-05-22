@@ -1,0 +1,17 @@
+{
+  "spec_dir": "e2e",
+  "spec_files": [
+    "**/*[sS]pec.ts"
+  ],
+  "helpers": [
+    "helpers/**/*.ts"
+  ],
+  "requires": [
+    "ts-node/register"
+  ],
+  "env": {
+    "failSpecWithNoExpectations": false,
+    "stopSpecOnExpectationFailure": false,
+    "random": false
+  }
+}

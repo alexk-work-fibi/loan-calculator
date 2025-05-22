@@ -1,0 +1,68 @@
+.payment-schedule-container {
+  margin-top: 20px;
+}
+
+mat-card {
+  margin-bottom: 20px;
+}
+
+.loan-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.summary-item {
+  flex-basis: 48%;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+}
+
+.label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.value {
+  font-size: 1.1em;
+}
+
+.chart-container {
+  height: 400px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.payment-table {
+  width: 100%;
+}
+
+th.mat-header-cell, td.mat-cell {
+  padding: 10px;
+  text-align: right;
+}
+
+th.mat-header-cell:first-child, 
+td.mat-cell:first-child {
+  text-align: left;
+}
+
+.no-calculation {
+  margin-top: 20px;
+  text-align: center;
+  padding: 50px 0;
+}
+
+@media (max-width: 768px) {
+  .loan-summary {
+    flex-direction: column;
+  }
+  
+  .summary-item {
+    flex-basis: 100%;
+  }
+}

@@ -1,1 +1,49 @@
-<p>loan-calculator works!</p>
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Loan Calculator</mat-card-title>
+    <mat-card-subtitle>Enter your loan details below</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="loanForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <mat-form-field appearance="outline">
+          <mat-label>Loan Amount ($)</mat-label>
+          <input matInput type="number" formControlName="loanAmount" required>
+          <mat-error *ngIf="loanForm.get('loanAmount')?.invalid && loanForm.get('loanAmount')?.touched">
+            Please enter a valid loan amount (minimum $1,000)
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-group">
+        <mat-form-field appearance="outline">
+          <mat-label>Interest Rate (%)</mat-label>
+          <input matInput type="number" step="0.01" formControlName="interestRate" required>
+          <mat-error *ngIf="loanForm.get('interestRate')?.invalid && loanForm.get('interestRate')?.touched">
+            Please enter a valid interest rate (minimum 0.1%)
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-group">
+        <mat-form-field appearance="outline">
+          <mat-label>Loan Term (years)</mat-label>
+          <input matInput type="number" formControlName="termInYears" required>
+          <mat-error *ngIf="loanForm.get('termInYears')?.invalid && loanForm.get('termInYears')?.touched">
+            Please enter a valid loan term (between 1 and 40 years)
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="error-message" *ngIf="error">{{ error }}</div>
+
+      <div class="button-group">
+        <button mat-raised-button color="primary" type="submit" [disabled]="loanForm.invalid || loading">
+          {{ loading ? 'Calculating...' : 'Calculate' }}
+        </button>
+        <button mat-button type="button" (click)="resetForm()">Reset</button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
