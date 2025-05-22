@@ -1,0 +1,16 @@
+digraph INFRA {
+  node [ color = "black", fillcolor = "#E6E6E6", height =1, style = "filled,bold,rounded", fontname = "Arial" ];
+  "mongodb" [ label = "mongodb
+(Docker::Container)", shape =cylinder, fillcolor = "#FFCFB3" ];
+  "loan-calculator-api" [ label = "loan-calculator-api
+(Docker::Container)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "mongo-data" [ label = "mongo-data
+(Docker::Volume)", shape =cylinder, fillcolor = "#FFF5CD" ];
+  "LoanCacheDb" [ label = "LoanCacheDb
+(MongoDB::Database)", shape =cylinder, fillcolor = "#FFCFB3" ];
+  "LoanCalculations" [ label = "LoanCalculations
+(MongoDB::Collection)", shape =cylinder, fillcolor = "#FFCFB3" ];
+  "loan-calculator-api" -> "mongodb";
+  "LoanCacheDb" -> "mongodb";
+  "LoanCalculations" -> "LoanCacheDb";
+}

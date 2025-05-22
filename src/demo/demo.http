@@ -1,0 +1,17 @@
+@demo_HostAddress = http://localhost:5062
+
+### Calculate loan payments
+POST {{demo_HostAddress}}/api/LoanCalculator/calculate
+Content-Type: application/json
+
+{
+  "LoanAmount": 10000,
+  "InterestRate": 5.5,
+  "TermInYears": 5
+}
+
+### Get payments for a loan
+GET {{demo_HostAddress}}/api/LoanCalculator/payments?LoanAmount=10000&InterestRate=5.5&TermInYears=5
+Accept: application/json
+
+###
