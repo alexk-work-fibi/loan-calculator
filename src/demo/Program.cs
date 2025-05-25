@@ -15,6 +15,17 @@ builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<demo.Services.InterestRateScraperService>();
 
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // Configure MongoDB
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
@@ -50,6 +61,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Use CORS before other middleware
+app.UseCors("AllowAngularApp");
 
 app.UseAuthorization();
 

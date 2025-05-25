@@ -18,8 +18,18 @@ namespace demo.Controllers
 
         public LoanCalculatorController(IMongoCollection<LoanCalculationResult> loanCalculations, ILogger<LoanCalculatorController> logger)
         {
-            _loanCalculations = loanCalculations;
             _logger = logger;
+            
+            try
+            {
+                _loanCalculations = loanCalculations;
+                _logger.LogInformation("MongoDB collection injected successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Error with MongoDB collection: {Message}. Will operate without persistence.", ex.Message);
+                // We'll handle null _loanCalculations in the methods
+            }
         }
 
         [HttpPost("calculate")]
@@ -58,8 +68,23 @@ namespace demo.Controllers
                 CalculateFixedPrincipal(result);
             }
 
-            _loanCalculations.InsertOne(result);
-            _logger.LogInformation("Loan calculation result saved: {@Result}", result);
+            try
+            {
+                if (_loanCalculations != null)
+                {
+                    _loanCalculations.InsertOne(result);
+                    _logger.LogInformation("Loan calculation result saved: {@Result}", result);
+                }
+                else
+                {
+                    _logger.LogWarning("MongoDB not available, calculation result not persisted");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save loan calculation result");
+                // Continue without failing the request
+            }
 
             return Ok(result);
         }
@@ -82,22 +107,73 @@ namespace demo.Controllers
                 calculationMethod = "shpitzer"; // Default to Shpitzer if invalid
             }
 
-            var calculations = _loanCalculations.Find(result =>
-                result.LoanAmount == (decimal)request.LoanAmount &&
-                result.InterestRate == (decimal)request.InterestRate &&
-                result.TermInYears == request.TermInYears &&
-                result.CalculationMethod == calculationMethod)
-                .ToList();
-
-            if (calculations.Count == 0)
+            LoanCalculationResult result = null;
+            
+            try
             {
-                // If no matching calculation exists, create one on the fly
-                return CalculateLoan(request);
+                if (_loanCalculations != null)
+                {
+                    var calculations = _loanCalculations.Find(r =>
+                        r.LoanAmount == (decimal)request.LoanAmount &&
+                        r.InterestRate == (decimal)request.InterestRate &&
+                        r.TermInYears == request.TermInYears &&
+                        r.CalculationMethod == calculationMethod)
+                        .ToList();
+                        
+                    if (calculations.Count > 0)
+                    {
+                        result = calculations.First();
+                        _logger.LogInformation("Found existing calculation in MongoDB");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error querying MongoDB");
+                // Continue without failing the request
             }
             
-            var result = calculations.First();
+            if (result == null)
+            {
+                // If no matching calculation exists or MongoDB is not available, create one on the fly
+                _logger.LogInformation("No existing calculation found, calculating on the fly");
+                
+                // Create a new calculation result
+                result = new LoanCalculationResult
+                {
+                    LoanAmount = (decimal)request.LoanAmount,
+                    InterestRate = (decimal)request.InterestRate,
+                    TermInYears = request.TermInYears,
+                    CalculationMethod = calculationMethod
+                };
+                
+                // Calculate based on method
+                if (calculationMethod == "shpitzer")
+                {
+                    CalculateShpitzer(result);
+                }
+                else
+                {
+                    CalculateFixedPrincipal(result);
+                }
+                
+                // Try to save to MongoDB if available
+                try
+                {
+                    if (_loanCalculations != null)
+                    {
+                        _loanCalculations.InsertOne(result);
+                        _logger.LogInformation("New calculation saved to MongoDB");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to save new calculation to MongoDB");
+                    // Continue without failing the request
+                }
+            }
             
-            _logger.LogInformation("Fetched payments: {@PaymentSchedule}", result.PaymentSchedule);
+            _logger.LogInformation("Returning payment schedule with {Count} payments", result.PaymentSchedule.Count);
 
             return Ok(result);
         }
