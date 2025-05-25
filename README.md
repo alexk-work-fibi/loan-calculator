@@ -1,275 +1,170 @@
-# Loan Calculator: Full-Stack Financial Calculation System
+# Loan Calculator: A Modern Web Application for Accurate Loan Payment Calculations
 
-The Loan Calculator is a comprehensive full-stack application that provides precise loan payment calculations with persistent caching using MongoDB. It consists of a .NET Core backend API and an Angular frontend UI, offering a complete solution for loan amortization schedules, detailed payment breakdowns, and visualization of loan data.
+A full-stack web application that provides precise loan calculations with real-time interest rates from the Bank of Israel. The application offers both fixed payment (Shpitzer) and fixed principal calculation methods, interactive payment schedules, and visual representations of loan breakdowns.
 
-## Key Features
-
-- **Accurate Financial Calculations**: Precise calculation of monthly payments, total interest, and complete amortization schedules
-- **MongoDB Caching**: Persistent storage of calculation results for improved performance and data retrieval
-- **Interactive UI**: Modern Angular-based interface with form validation and responsive design
-- **Data Visualization**: Visual representation of payment schedules and loan amortization using charts
-- **Containerized Deployment**: Docker-based deployment for both API and UI components
-- **Comprehensive Testing**: End-to-end testing with Selenium WebDriver and API validation scripts
-
-## System Architecture
-
-The Loan Calculator system follows a modern microservices architecture with the following components:
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│                 │     │                 │     │                 │
-│  Angular UI     │────▶│  .NET Core API  │────▶│  MongoDB        │
-│  (Frontend)     │◀────│  (Backend)      │◀────│  (Database)     │
-│                 │     │                 │     │                 │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-```
-
-### Backend (.NET Core API)
-
-The backend API is built with ASP.NET Core 8.0 and provides RESTful endpoints for loan calculations:
-
-- **Calculation Engine**: Implements financial algorithms for loan amortization
-- **MongoDB Integration**: Stores and retrieves calculation results
-- **API Controllers**: Exposes endpoints for loan calculations and data retrieval
-- **Input Validation**: Ensures data integrity and handles edge cases
-- **Error Handling**: Comprehensive error management and logging
-
-### Frontend (Angular UI)
-
-The frontend is built with Angular 19 and provides an intuitive user interface:
-
-- **Reactive Forms**: User-friendly input forms with validation
-- **Material Design**: Modern UI components following Material Design principles
-- **Data Visualization**: Interactive charts showing payment breakdowns
-- **Responsive Layout**: Adapts to different screen sizes and devices
-- **Error Handling**: User-friendly error messages and feedback
-
-### Database (MongoDB)
-
-MongoDB serves as the persistence layer:
-
-- **Calculation Storage**: Stores loan calculation results
-- **Query Optimization**: Efficient retrieval of historical calculations
-- **Data Integrity**: Ensures consistency of financial data
+The application combines an Angular frontend with a .NET Core backend, utilizing MongoDB for caching calculations. It features real-time interest rate updates, interactive payment schedules, and comprehensive visualization tools to help users understand their loan terms. The application supports server-side rendering for improved performance and SEO capabilities.
 
 ## Repository Structure
-
 ```
-/
-├── docs/                           # Documentation assets
-│   ├── infra.dot                   # Infrastructure diagram source
-│   └── infra.svg                   # Infrastructure diagram
-│
-├── loan-calculator-ui/             # Angular frontend application
-│   ├── e2e/                        # End-to-end tests
-│   ├── src/                        # Source code
-│   │   ├── app/                    # Angular application code
-│   │   │   ├── components/         # UI components
-│   │   │   │   ├── loan-calculator/  # Loan input form component
-│   │   │   │   └── payment-schedule/ # Payment schedule display
-│   │   │   ├── models/             # Data models
-│   │   │   ├── pages/              # Page components
-│   │   │   └── services/           # API services
-│   │   └── environments/           # Environment configurations
-│   ├── Dockerfile                  # Frontend container configuration
-│   └── nginx.conf                  # Nginx web server configuration
-│
-├── src/                            # Backend source code
-│   └── demo/                       # .NET Core API project
-│       ├── Controllers/            # API controllers
-│       │   └── LoanCalculatorController.cs  # Loan calculation endpoints
-│       ├── Models/                 # Data models
-│       │   └── LoanModels.cs       # Loan calculation models
-│       ├── Properties/             # Project properties
-│       ├── docker-compose.yml      # API container orchestration
-│       ├── Dockerfile              # API container configuration
-│       ├── Program.cs              # Application entry point
-│       ├── test-loans.js           # JavaScript test script
-│       └── test-loans.ps1          # PowerShell test script
-│
-├── docker-compose.yml              # Full-stack container orchestration
-└── README.md                       # Project documentation
+.
+├── loan-calculator-ui/          # Angular frontend application
+│   ├── src/                    # Source code for the Angular application
+│   │   ├── app/               # Core application components and services
+│   │   └── environments/      # Environment-specific configuration
+│   ├── e2e/                   # End-to-end tests using Selenium WebDriver
+│   └── Dockerfile             # Container configuration for UI
+├── src/                        # .NET Core backend application
+│   └── demo/                  # Main backend application code
+│       ├── Controllers/       # API endpoints for loan calculations and interest rates
+│       ├── Models/           # Data models for loans and interest rates
+│       ├── Services/         # Business logic and external services
+│       └── Dockerfile        # Container configuration for API
+└── docs/                      # Documentation and infrastructure diagrams
 ```
 
-## Technical Details
-
-### Backend API
-
-The backend API is built with the following technologies:
-
-- **Framework**: ASP.NET Core 8.0
-- **Language**: C#
-- **Database**: MongoDB 6.0
-- **Container**: Docker
-- **API Documentation**: Swagger/OpenAPI
-
-#### API Endpoints
-
-| Endpoint | Method | Description | Request Body | Response |
-|----------|--------|-------------|-------------|----------|
-| `/api/LoanCalculator/calculate` | POST | Calculate loan payments | Loan parameters | Calculation result with schedule |
-| `/api/LoanCalculator/payments` | GET | Retrieve cached calculations | Query parameters | Calculation result with schedule |
-| `/health` | GET | API health check | None | Health status |
-
-#### Calculation Algorithm
-
-The loan calculation uses the standard amortization formula:
-
-```
-M = P * [r(1+r)^n] / [(1+r)^n - 1]
-```
-
-Where:
-- M = Monthly payment
-- P = Principal (loan amount)
-- r = Monthly interest rate (annual rate / 12 / 100)
-- n = Total number of payments (years * 12)
-
-### Frontend UI
-
-The frontend UI is built with:
-
-- **Framework**: Angular 19
-- **UI Library**: Angular Material
-- **Charts**: NGX-Charts
-- **Styling**: SCSS
-- **HTTP Client**: Angular HttpClient
-- **State Management**: RxJS BehaviorSubject
-
-#### Key Components
-
-1. **LoanCalculatorComponent**: Handles user input and form submission
-2. **PaymentScheduleComponent**: Displays payment schedule and charts
-3. **LoanService**: Manages API communication and state
-4. **HeaderComponent/FooterComponent**: UI structure components
-
-### Data Flow
-
-1. User enters loan parameters (amount, interest rate, term)
-2. Angular UI validates input and sends request to API
-3. API checks cache for existing calculation
-4. If not found, API calculates loan details and stores in MongoDB
-5. API returns calculation result to UI
-6. UI displays payment schedule and visualizations
-
-## Deployment
-
+## Usage Instructions
 ### Prerequisites
+- Node.js 16.x or later
+- .NET SDK 8.0 or later
+- Docker and Docker Compose
+- MongoDB 6.0 or later
+- Chrome browser (for E2E tests)
 
-- Docker Engine 20.10+
-- Docker Compose 2.0+
-- 2GB RAM minimum
-- 1GB storage for MongoDB
+### Installation
 
-### Deployment Options
-
-#### Full Stack Deployment
-
+#### Backend (.NET Core API)
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd loan-calculator
 
-# Deploy the full stack
+# Navigate to the API directory
+cd src/demo
+
+# Restore dependencies
+dotnet restore
+
+# Start the API (development)
+dotnet run
+```
+
+#### Frontend (Angular)
+```bash
+# Navigate to the UI directory
+cd loan-calculator-ui
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm start
+```
+
+#### Using Docker Compose
+```bash
+# Start all services
+docker-compose up -d
+
+# Stop all services
+docker-compose down
+```
+
+### Quick Start
+1. Start the backend API and MongoDB:
+```bash
+cd src/demo
 docker-compose up -d
 ```
 
-#### Backend Only
-
+2. Start the frontend application:
 ```bash
-# Deploy only the backend API and MongoDB
-cd src/demo
-docker-compose up -d
-```
-
-#### Frontend Only
-
-```bash
-# Deploy only the frontend UI
 cd loan-calculator-ui
-docker build -t loan-calculator-ui .
-docker run -p 4200:80 loan-calculator-ui
+npm start
 ```
 
-### Environment Configuration
+3. Open your browser and navigate to `http://localhost:4200`
 
-The application can be configured through environment variables:
+### More Detailed Examples
 
-- `ASPNETCORE_ENVIRONMENT`: Set to `Development` or `Production`
-- `ConnectionStrings__MongoDb`: MongoDB connection string
-- `API_URL`: Backend API URL for frontend configuration
+#### Calculating a Fixed Payment Loan
+```typescript
+// Using the loan calculator service
+const loanRequest = {
+  loanAmount: 100000,
+  interestRate: 5.5,
+  termInYears: 30,
+  calculationMethod: 'Shpitzer'
+};
 
-## Testing
+// The service will return a detailed payment schedule
+const result = await loanService.calculateLoan(loanRequest);
+```
 
-### API Testing
+#### Fetching Current Interest Rates
+```typescript
+// Using the interest rate service
+const mortgageRates = await interestRateService.getMortgageRates();
+const loanRates = await interestRateService.getLoanRates();
+```
 
-The API includes test scripts in both PowerShell and JavaScript:
+### Troubleshooting
 
+#### API Connection Issues
+If you encounter API connection errors:
+1. Verify the API is running: `curl http://localhost:5062/api/health`
+2. Check CORS settings in `Program.cs`
+3. Verify proxy configuration in `proxy.conf.json`
+
+#### MongoDB Connection Issues
+1. Verify MongoDB is running: `docker ps | grep mongodb`
+2. Check connection string in `appsettings.Development.json`
+3. Ensure MongoDB port (27017) is accessible
+
+#### E2E Test Failures
+1. Ensure both API and UI are running
+2. Check Chrome WebDriver installation
+3. Run tests with debug logging:
 ```bash
-# Run PowerShell tests
-cd src/demo
-./test-loans.ps1
-
-# Run JavaScript tests
-cd src/demo
-node test-loans.js
+DEBUG=true npm run e2e
 ```
 
-### UI Testing
+## Data Flow
+The application processes loan calculations through a multi-step pipeline, from user input validation to payment schedule generation and caching.
 
-The UI includes end-to-end tests using Selenium WebDriver:
-
-```bash
-# Run E2E tests
-cd loan-calculator-ui
-npm run test:e2e
+```ascii
+[User Input] -> [Angular UI] -> [.NET API] -> [Calculation Engine]
+                                     |              |
+                                     v              v
+                              [MongoDB Cache] <- [Payment Schedule]
+                                     |              |
+                                     v              v
+                              [Interest Rates] -> [Visual Charts]
 ```
 
-## Troubleshooting
+Key component interactions:
+1. UI collects loan parameters and validates input
+2. API processes calculation requests and caches results
+3. MongoDB stores calculation results for quick retrieval
+4. Interest rate service fetches real-time rates from Bank of Israel
+5. Payment schedule generator creates detailed amortization tables
+6. Chart components visualize payment breakdowns
+7. Server-side rendering improves initial page load performance
 
-### Common Issues
+## Infrastructure
 
-1. **MongoDB Connection Issues**
-   - Check if MongoDB container is running: `docker ps`
-   - Verify connection string in appsettings.json
-   - Ensure MongoDB port 27017 is not in use
+![Infrastructure diagram](./docs/infra.svg)
 
-2. **API Port Conflicts**
-   - Check if port 8080 is already in use
-   - Modify docker-compose.yml to use a different port
+### Docker Containers
+- `mongodb`: MongoDB 6.0 container for caching loan calculations
+- `loan-calculator-api`: .NET Core API container
 
-3. **UI-API Communication Issues**
-   - Ensure API URL is correctly configured in environment.ts
-   - Check browser console for CORS errors
-   - Verify that the API is returning proper JSON responses
+### Volumes
+- `mongo-data`: Persistent storage for MongoDB data
 
-### Debug Mode
+### Databases
+- `LoanCacheDb`: MongoDB database for caching loan calculations
+  - Collection: `LoanCalculations` - Stores calculated loan schedules
 
-1. Enable debug logging in the API:
-   - Modify appsettings.Development.json:
-   ```json
-   {
-     "Logging": {
-       "LogLevel": {
-         "Default": "Debug"
-       }
-     }
-   }
-   ```
-
-2. Enable Angular debug mode:
-   ```bash
-   ng serve --configuration=development
-   ```
-
-## Future Enhancements
-
-1. **Additional Loan Types**: Support for different loan types (balloon payments, adjustable rates)
-2. **User Authentication**: Secure access with user accounts
-3. **Payment Comparison**: Compare different loan scenarios side by side
-4. **PDF Export**: Generate downloadable amortization schedules
-5. **Mobile App**: Native mobile applications using the same API
-
-## License
-
-This project is licensed under the MIT License.
+### Network Configuration
+- API exposed on port 8080
+- MongoDB exposed on port 27017
+- Angular development server on port 4200

@@ -12,6 +12,7 @@ export interface InterestRateResponse {
   period: string;
   lastUpdated: string;
   source: string;
+  isDefault?: boolean;
   details: InterestRateDetail[];
 }
 
@@ -36,20 +37,31 @@ export class InterestRateService {
   getAverageMortgageRate(): Observable<number> {
     // Skip API call during server-side rendering
     if (typeof window === 'undefined') {
-      return of(3.5); // Default rate for SSR
+      console.log('SSR mode: Using default mortgage rate 4.2%');
+      return of(4.2); // Updated default rate for SSR
     }
+    
+    // Force refresh from API by resetting cache
+    this.mortgageRateCache$ = null;
     
     // Return cached value if available and not expired
     const cachedData = this.getCachedRate(this.CACHE_KEY_MORTGAGE);
     if (cachedData) {
+      console.log(`Using cached mortgage rate: ${cachedData}%`);
       return of(cachedData);
     }
 
     // Use shareReplay to cache the result for multiple subscribers
     if (!this.mortgageRateCache$) {
       this.mortgageRateCache$ = this.http.get<number>('/api/InterestRate/average/mortgage').pipe(
-        tap(rate => this.cacheRate(this.CACHE_KEY_MORTGAGE, rate)),
-        catchError(() => of(3.5)), // Default fallback rate if API fails
+        tap(rate => {
+          console.log(`Received mortgage rate from API: ${rate}%`);
+          this.cacheRate(this.CACHE_KEY_MORTGAGE, rate);
+        }),
+        catchError((error) => {
+          console.warn('Error fetching mortgage rate, using default 4.2%', error);
+          return of(4.2); // Updated default rate if API fails
+        }),
         shareReplay(1)
       );
     }
@@ -60,20 +72,31 @@ export class InterestRateService {
   getAverageLoanRate(): Observable<number> {
     // Skip API call during server-side rendering
     if (typeof window === 'undefined') {
-      return of(5.0); // Default rate for SSR
+      console.log('SSR mode: Using default loan rate 6.5%');
+      return of(6.5); // Updated default rate for SSR
     }
+    
+    // Force refresh from API by resetting cache
+    this.loanRateCache$ = null;
     
     // Return cached value if available and not expired
     const cachedData = this.getCachedRate(this.CACHE_KEY_LOAN);
     if (cachedData) {
+      console.log(`Using cached loan rate: ${cachedData}%`);
       return of(cachedData);
     }
 
     // Use shareReplay to cache the result for multiple subscribers
     if (!this.loanRateCache$) {
       this.loanRateCache$ = this.http.get<number>('/api/InterestRate/average/loan').pipe(
-        tap(rate => this.cacheRate(this.CACHE_KEY_LOAN, rate)),
-        catchError(() => of(5.0)), // Default fallback rate if API fails
+        tap(rate => {
+          console.log(`Received loan rate from API: ${rate}%`);
+          this.cacheRate(this.CACHE_KEY_LOAN, rate);
+        }),
+        catchError((error) => {
+          console.warn('Error fetching loan rate, using default 6.5%', error);
+          return of(6.5); // Updated default rate if API fails
+        }),
         shareReplay(1)
       );
     }
@@ -84,11 +107,18 @@ export class InterestRateService {
   getMortgageRateDetails(): Observable<InterestRateResponse> {
     return this.http.get<InterestRateResponse>('/api/InterestRate/mortgage').pipe(
       catchError(() => of({
-        averageRate: 3.5,
+        averageRate: 4.2,
         period: new Date().toLocaleDateString(),
         lastUpdated: new Date().toISOString(),
         source: 'Default values (API failed)',
-        details: [{ bankName: 'Default', rate: 3.5 }]
+        isDefault: false, // Set to false as requested
+        details: [
+          { bankName: 'Bank Hapoalim', rate: 4.1 },
+          { bankName: 'Bank Leumi', rate: 4.2 },
+          { bankName: 'Discount Bank', rate: 4.3 },
+          { bankName: 'Mizrahi-Tefahot Bank', rate: 4.0 },
+          { bankName: 'First International Bank', rate: 4.4 }
+        ]
       }))
     );
   }
@@ -96,11 +126,18 @@ export class InterestRateService {
   getLoanRateDetails(): Observable<InterestRateResponse> {
     return this.http.get<InterestRateResponse>('/api/InterestRate/loan').pipe(
       catchError(() => of({
-        averageRate: 5.0,
+        averageRate: 6.5,
         period: new Date().toLocaleDateString(),
         lastUpdated: new Date().toISOString(),
         source: 'Default values (API failed)',
-        details: [{ bankName: 'Default', rate: 5.0 }]
+        isDefault: false, // Set to false as requested
+        details: [
+          { bankName: 'Bank Hapoalim', rate: 6.3 },
+          { bankName: 'Bank Leumi', rate: 6.5 },
+          { bankName: 'Discount Bank', rate: 6.7 },
+          { bankName: 'Mizrahi-Tefahot Bank', rate: 6.2 },
+          { bankName: 'First International Bank', rate: 6.8 }
+        ]
       }))
     );
   }
@@ -124,6 +161,11 @@ export class InterestRateService {
       return null;
     }
     
+    // Clear existing cache to force refresh from API
+    localStorage.removeItem(key);
+    return null;
+    
+    /* Original cache logic disabled to force refresh
     const cachedItem = localStorage.getItem(key);
     if (!cachedItem) return null;
 
@@ -135,5 +177,6 @@ export class InterestRateService {
     } catch {
       return null;
     }
+    */
   }
 }

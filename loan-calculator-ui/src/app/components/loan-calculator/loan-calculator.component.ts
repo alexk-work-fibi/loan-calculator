@@ -35,7 +35,7 @@ export class LoanCalculatorComponent implements OnInit {
   loading = false;
   error = '';
   loadingRate = false;
-  defaultRate = 3.5; // Fallback default rate
+  defaultRate = 4.2; // Updated default rate to match backend
   calculationMethods = [
     { value: 'shpitzer', label: 'שפיצר (תשלום קבוע)' },
     { value: 'fixedprincipal', label: 'קרן קבועה (תשלום יורד)' }
@@ -65,8 +65,10 @@ export class LoanCalculatorComponent implements OnInit {
         this.defaultRate = rate;
         this.loanForm.get('interestRate')?.setValue(rate);
         this.loadingRate = false;
+        console.log(`Using interest rate: ${rate}%`);
       },
       error: () => {
+        console.warn(`Failed to load current interest rate, using default: ${this.defaultRate}%`);
         this.loadingRate = false;
       }
     });
@@ -79,8 +81,10 @@ export class LoanCalculatorComponent implements OnInit {
         this.defaultRate = rate;
         this.loanForm.get('interestRate')?.setValue(rate);
         this.loadingRate = false;
+        console.log(`Using mortgage rate: ${rate}%`);
       },
       error: () => {
+        console.warn(`Failed to load mortgage rate, using default: ${this.defaultRate}%`);
         this.loadingRate = false;
       }
     });
@@ -93,8 +97,10 @@ export class LoanCalculatorComponent implements OnInit {
         this.defaultRate = rate;
         this.loanForm.get('interestRate')?.setValue(rate);
         this.loadingRate = false;
+        console.log(`Using loan rate: ${rate}%`);
       },
       error: () => {
+        console.warn(`Failed to load loan rate, using default: ${this.defaultRate}%`);
         this.loadingRate = false;
       }
     });

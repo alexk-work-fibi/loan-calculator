@@ -97,6 +97,8 @@ namespace demo.Controllers
             try
             {
                 var rates = await GetCachedMortgageRates();
+                _logger.LogInformation("Returning average mortgage rate: {Rate}% (IsDefault: {IsDefault})", 
+                    rates.AverageRate, rates.IsDefault);
                 return Ok(rates.AverageRate);
             }
             catch (Exception ex)
@@ -112,6 +114,8 @@ namespace demo.Controllers
             try
             {
                 var rates = await GetCachedLoanRates();
+                _logger.LogInformation("Returning average loan rate: {Rate}% (IsDefault: {IsDefault})", 
+                    rates.AverageRate, rates.IsDefault);
                 return Ok(rates.AverageRate);
             }
             catch (Exception ex)

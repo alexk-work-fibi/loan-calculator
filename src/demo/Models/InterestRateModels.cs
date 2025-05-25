@@ -9,6 +9,7 @@ namespace demo.Models
         public string Period { get; set; }
         public DateTime LastUpdated { get; set; }
         public string Source { get; set; }
+        public bool IsDefault { get; set; } = false;
         public List<RateDetail> Details { get; set; } = new List<RateDetail>();
     }
 
