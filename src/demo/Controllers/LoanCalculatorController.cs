@@ -33,47 +33,29 @@ namespace demo.Controllers
                 return BadRequest("Invalid loan calculation parameters.");
             }
 
-            var monthlyRate = (double)(request.InterestRate / 100 / 12);
-            var numberOfPayments = request.TermInYears * 12;
-            var monthlyPayment = (double)request.LoanAmount * monthlyRate / (1 - Math.Pow(1 + monthlyRate, -numberOfPayments));
+            // Validate calculation method
+            string calculationMethod = request.CalculationMethod?.ToLower() ?? "shpitzer";
+            if (calculationMethod != "shpitzer" && calculationMethod != "fixedprincipal")
+            {
+                calculationMethod = "shpitzer"; // Default to Shpitzer if invalid
+            }
 
             var result = new LoanCalculationResult
             {
                 LoanAmount = (decimal)request.LoanAmount,
                 InterestRate = (decimal)request.InterestRate,
                 TermInYears = request.TermInYears,
-                MonthlyPayment = Math.Round((decimal)monthlyPayment, 2)
+                CalculationMethod = calculationMethod
             };
 
-            // Generate payment schedule
-            decimal remainingBalance = result.LoanAmount;
-            decimal monthlyInterestRate = result.InterestRate / 100 / 12;
-            
-            for (int month = 1; month <= numberOfPayments; month++)
+            // Calculate based on method
+            if (calculationMethod == "shpitzer")
             {
-                var interestPayment = Math.Round(remainingBalance * monthlyInterestRate, 2);
-                var principalPayment = Math.Round(result.MonthlyPayment - interestPayment, 2);
-                
-                // Adjust the final payment to ensure the balance reaches exactly zero
-                if (month == numberOfPayments)
-                {
-                    principalPayment = remainingBalance;
-                    result.MonthlyPayment = principalPayment + interestPayment;
-                }
-
-                remainingBalance -= principalPayment;
-                
-                // Ensure we don't get a negative balance due to rounding
-                if (remainingBalance < 0) remainingBalance = 0;
-
-                result.PaymentSchedule.Add(new MonthlyPaymentDetail
-                {
-                    PaymentNumber = month,
-                    Payment = Math.Round(principalPayment + interestPayment, 2),
-                    Principal = principalPayment,
-                    Interest = interestPayment,
-                    RemainingBalance = remainingBalance
-                });
+                CalculateShpitzer(result);
+            }
+            else
+            {
+                CalculateFixedPrincipal(result);
             }
 
             _loanCalculations.InsertOne(result);
@@ -93,10 +75,18 @@ namespace demo.Controllers
                 return BadRequest("Invalid loan calculation parameters.");
             }
 
+            // Validate calculation method
+            string calculationMethod = request.CalculationMethod?.ToLower() ?? "shpitzer";
+            if (calculationMethod != "shpitzer" && calculationMethod != "fixedprincipal")
+            {
+                calculationMethod = "shpitzer"; // Default to Shpitzer if invalid
+            }
+
             var calculations = _loanCalculations.Find(result =>
                 result.LoanAmount == (decimal)request.LoanAmount &&
                 result.InterestRate == (decimal)request.InterestRate &&
-                result.TermInYears == request.TermInYears)
+                result.TermInYears == request.TermInYears &&
+                result.CalculationMethod == calculationMethod)
                 .ToList();
 
             if (calculations.Count == 0)
@@ -110,6 +100,124 @@ namespace demo.Controllers
             _logger.LogInformation("Fetched payments: {@PaymentSchedule}", result.PaymentSchedule);
 
             return Ok(result);
+        }
+
+        /// <summary>
+        /// Shpitzer (שפיצר) method - Fixed payment throughout the loan term
+        /// Also known as the French method or standard amortization
+        /// </summary>
+        private void CalculateShpitzer(LoanCalculationResult result)
+        {
+            // Convert annual interest rate to monthly
+            decimal monthlyInterestRate = result.InterestRate / 100 / 12;
+            int numberOfPayments = result.TermInYears * 12;
+            
+            // Calculate fixed monthly payment using the formula:
+            // PMT = P * r * (1+r)^n / ((1+r)^n - 1)
+            // Where:
+            // PMT = monthly payment
+            // P = principal (loan amount)
+            // r = monthly interest rate (annual rate / 12 / 100)
+            // n = total number of payments (years * 12)
+            
+            double monthlyRate = (double)monthlyInterestRate;
+            double loanAmount = (double)result.LoanAmount;
+            
+            // Using the formula for fixed payment calculation
+            double numerator = monthlyRate * Math.Pow(1 + monthlyRate, numberOfPayments);
+            double denominator = Math.Pow(1 + monthlyRate, numberOfPayments) - 1;
+            double monthlyPayment = loanAmount * (numerator / denominator);
+            
+            result.MonthlyPayment = Math.Round((decimal)monthlyPayment, 2);
+
+            // Generate payment schedule
+            decimal remainingBalance = result.LoanAmount;
+            
+            for (int month = 1; month <= numberOfPayments; month++)
+            {
+                // Calculate interest for this period
+                decimal interestPayment = Math.Round(remainingBalance * monthlyInterestRate, 2);
+                
+                // Calculate principal for this period (payment - interest)
+                decimal principalPayment = Math.Round(result.MonthlyPayment - interestPayment, 2);
+                
+                // Adjust the final payment to ensure the balance reaches exactly zero
+                if (month == numberOfPayments)
+                {
+                    principalPayment = remainingBalance;
+                    result.MonthlyPayment = principalPayment + interestPayment;
+                }
+
+                // Update remaining balance
+                remainingBalance -= principalPayment;
+                
+                // Ensure we don't get a negative balance due to rounding
+                if (remainingBalance < 0) remainingBalance = 0;
+
+                // Add this payment to the schedule
+                result.PaymentSchedule.Add(new MonthlyPaymentDetail
+                {
+                    PaymentNumber = month,
+                    Payment = Math.Round(principalPayment + interestPayment, 2),
+                    Principal = principalPayment,
+                    Interest = interestPayment,
+                    RemainingBalance = remainingBalance
+                });
+            }
+        }
+
+        /// <summary>
+        /// Fixed Principal (קרן קבועה) method - Equal principal payments with decreasing interest
+        /// Also known as the straight-line method or constant amortization
+        /// </summary>
+        private void CalculateFixedPrincipal(LoanCalculationResult result)
+        {
+            // Convert annual interest rate to monthly
+            decimal monthlyInterestRate = result.InterestRate / 100 / 12;
+            int numberOfPayments = result.TermInYears * 12;
+            
+            // In fixed principal, the principal payment is the same each month
+            decimal fixedPrincipal = Math.Round(result.LoanAmount / numberOfPayments, 2);
+            decimal remainingBalance = result.LoanAmount;
+
+            // First payment will be the highest (used as the "monthly payment" reference)
+            decimal firstInterest = Math.Round(remainingBalance * monthlyInterestRate, 2);
+            result.MonthlyPayment = fixedPrincipal + firstInterest; // Initial payment amount
+            
+            // Generate payment schedule
+            for (int month = 1; month <= numberOfPayments; month++)
+            {
+                // Calculate interest for this period
+                decimal interestPayment = Math.Round(remainingBalance * monthlyInterestRate, 2);
+                
+                // Principal is fixed for each payment
+                decimal principalPayment = fixedPrincipal;
+                
+                // Adjust the final payment to ensure the balance reaches exactly zero
+                if (month == numberOfPayments)
+                {
+                    principalPayment = remainingBalance;
+                }
+
+                // Calculate total payment for this period
+                decimal totalPayment = principalPayment + interestPayment;
+                
+                // Update remaining balance
+                remainingBalance -= principalPayment;
+                
+                // Ensure we don't get a negative balance due to rounding
+                if (remainingBalance < 0) remainingBalance = 0;
+
+                // Add this payment to the schedule
+                result.PaymentSchedule.Add(new MonthlyPaymentDetail
+                {
+                    PaymentNumber = month,
+                    Payment = Math.Round(totalPayment, 2),
+                    Principal = principalPayment,
+                    Interest = interestPayment,
+                    RemainingBalance = remainingBalance
+                });
+            }
         }
     }
 }

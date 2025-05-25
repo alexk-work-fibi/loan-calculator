@@ -17,8 +17,17 @@
         <span class="value">{{calculationResult.TermInYears}} years</span>
       </div>
       <div class="summary-item">
+        <span class="label">Calculation Method:</span>
+        <span class="value">{{getCalculationMethodLabel()}}</span>
+      </div>
+      <div class="summary-item" *ngIf="calculationResult.CalculationMethod === 'shpitzer'">
         <span class="label">Monthly Payment:</span>
         <span class="value">${{calculationResult.MonthlyPayment | number:'1.2-2'}}</span>
+      </div>
+      <div class="summary-item" *ngIf="calculationResult.CalculationMethod === 'fixedprincipal'">
+        <span class="label">Initial Payment:</span>
+        <span class="value">${{calculationResult.MonthlyPayment | number:'1.2-2'}}</span>
+        <span class="note">(decreases over time)</span>
       </div>
     </mat-card-content>
   </mat-card>
@@ -66,65 +75,67 @@
       <mat-card-title>Payment Schedule</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <table mat-table [dataSource]="paginatedData" class="payment-table">
-        <!-- Payment Number Column -->
-        <ng-container matColumnDef="PaymentNumber">
-          <th mat-header-cell *matHeaderCellDef (click)="sortData('PaymentNumber')">
-            Payment # 
-            <span *ngIf="sortColumn === 'PaymentNumber'">
-              {{ sortDirection === 'asc' ? '↑' : '↓' }}
-            </span>
-          </th>
-          <td mat-cell *matCellDef="let payment">{{payment.PaymentNumber}}</td>
-        </ng-container>
+      <div class="table-container">
+        <table mat-table [dataSource]="paginatedData" class="payment-table">
+          <!-- Payment Number Column -->
+          <ng-container matColumnDef="PaymentNumber">
+            <th mat-header-cell *matHeaderCellDef (click)="sortData('PaymentNumber')">
+              Payment # 
+              <span *ngIf="sortColumn === 'PaymentNumber'">
+                {{ sortDirection === 'asc' ? '↑' : '↓' }}
+              </span>
+            </th>
+            <td mat-cell *matCellDef="let payment">{{payment.PaymentNumber}}</td>
+          </ng-container>
 
-        <!-- Payment Column -->
-        <ng-container matColumnDef="Payment">
-          <th mat-header-cell *matHeaderCellDef (click)="sortData('Payment')">
-            Payment
-            <span *ngIf="sortColumn === 'Payment'">
-              {{ sortDirection === 'asc' ? '↑' : '↓' }}
-            </span>
-          </th>
-          <td mat-cell *matCellDef="let payment">${{payment.Payment | number:'1.2-2'}}</td>
-        </ng-container>
+          <!-- Payment Column -->
+          <ng-container matColumnDef="Payment">
+            <th mat-header-cell *matHeaderCellDef (click)="sortData('Payment')">
+              Payment
+              <span *ngIf="sortColumn === 'Payment'">
+                {{ sortDirection === 'asc' ? '↑' : '↓' }}
+              </span>
+            </th>
+            <td mat-cell *matCellDef="let payment">${{payment.Payment | number:'1.2-2'}}</td>
+          </ng-container>
 
-        <!-- Principal Column -->
-        <ng-container matColumnDef="Principal">
-          <th mat-header-cell *matHeaderCellDef (click)="sortData('Principal')">
-            Principal
-            <span *ngIf="sortColumn === 'Principal'">
-              {{ sortDirection === 'asc' ? '↑' : '↓' }}
-            </span>
-          </th>
-          <td mat-cell *matCellDef="let payment">${{payment.Principal | number:'1.2-2'}}</td>
-        </ng-container>
+          <!-- Principal Column -->
+          <ng-container matColumnDef="Principal">
+            <th mat-header-cell *matHeaderCellDef (click)="sortData('Principal')">
+              Principal
+              <span *ngIf="sortColumn === 'Principal'">
+                {{ sortDirection === 'asc' ? '↑' : '↓' }}
+              </span>
+            </th>
+            <td mat-cell *matCellDef="let payment">${{payment.Principal | number:'1.2-2'}}</td>
+          </ng-container>
 
-        <!-- Interest Column -->
-        <ng-container matColumnDef="Interest">
-          <th mat-header-cell *matHeaderCellDef (click)="sortData('Interest')">
-            Interest
-            <span *ngIf="sortColumn === 'Interest'">
-              {{ sortDirection === 'asc' ? '↑' : '↓' }}
-            </span>
-          </th>
-          <td mat-cell *matCellDef="let payment">${{payment.Interest | number:'1.2-2'}}</td>
-        </ng-container>
+          <!-- Interest Column -->
+          <ng-container matColumnDef="Interest">
+            <th mat-header-cell *matHeaderCellDef (click)="sortData('Interest')">
+              Interest
+              <span *ngIf="sortColumn === 'Interest'">
+                {{ sortDirection === 'asc' ? '↑' : '↓' }}
+              </span>
+            </th>
+            <td mat-cell *matCellDef="let payment">${{payment.Interest | number:'1.2-2'}}</td>
+          </ng-container>
 
-        <!-- Remaining Balance Column -->
-        <ng-container matColumnDef="RemainingBalance">
-          <th mat-header-cell *matHeaderCellDef (click)="sortData('RemainingBalance')">
-            Remaining Balance
-            <span *ngIf="sortColumn === 'RemainingBalance'">
-              {{ sortDirection === 'asc' ? '↑' : '↓' }}
-            </span>
-          </th>
-          <td mat-cell *matCellDef="let payment">${{payment.RemainingBalance | number:'1.2-2'}}</td>
-        </ng-container>
+          <!-- Remaining Balance Column -->
+          <ng-container matColumnDef="RemainingBalance">
+            <th mat-header-cell *matHeaderCellDef (click)="sortData('RemainingBalance')">
+              Remaining Balance
+              <span *ngIf="sortColumn === 'RemainingBalance'">
+                {{ sortDirection === 'asc' ? '↑' : '↓' }}
+              </span>
+            </th>
+            <td mat-cell *matCellDef="let payment">${{payment.RemainingBalance | number:'1.2-2'}}</td>
+          </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-      </table>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
 
       <mat-paginator
         [length]="sortedData.length"

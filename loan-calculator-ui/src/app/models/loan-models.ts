@@ -2,6 +2,7 @@ export interface LoanCalculationRequest {
   LoanAmount: number;
   InterestRate: number;
   TermInYears: number;
+  CalculationMethod?: string;
 }
 
 export interface MonthlyPaymentDetail {
@@ -20,4 +21,5 @@ export interface LoanCalculationResult {
   MonthlyPayment: number;
   PaymentSchedule: MonthlyPaymentDetail[];
   CalculationDate?: Date;  // Optional since it might not be included in the /payments response
+  CalculationMethod?: string; // Shpitzer or FixedPrincipal
 }

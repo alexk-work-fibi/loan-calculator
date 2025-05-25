@@ -1,11 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatSliderModule } from '@angular/material/slider';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
 import { LoanService } from '../../services/loan.service';
+import { InterestRateService } from '../../services/interest-rate.service';
 import { LoanCalculationRequest } from '../../models/loan-models';
 
 @Component({
@@ -18,24 +22,81 @@ import { LoanCalculationRequest } from '../../models/loan-models';
     MatInputModule,
     MatButtonModule,
     MatCardModule,
-    MatSliderModule
+    MatSliderModule,
+    MatProgressSpinnerModule,
+    MatIconModule,
+    MatSelectModule
   ],
   templateUrl: './loan-calculator.component.html',
   styleUrl: './loan-calculator.component.scss'
 })
-export class LoanCalculatorComponent {
+export class LoanCalculatorComponent implements OnInit {
   loanForm: FormGroup;
   loading = false;
   error = '';
+  loadingRate = false;
+  defaultRate = 3.5; // Fallback default rate
+  calculationMethods = [
+    { value: 'shpitzer', label: 'שפיצר (תשלום קבוע)' },
+    { value: 'fixedprincipal', label: 'קרן קבועה (תשלום יורד)' }
+  ];
 
   constructor(
     private fb: FormBuilder,
-    private loanService: LoanService
+    private loanService: LoanService,
+    private interestRateService: InterestRateService
   ) {
     this.loanForm = this.fb.group({
       loanAmount: [100000, [Validators.required, Validators.min(1000)]],
-      interestRate: [5.5, [Validators.required, Validators.min(0.1)]],
-      termInYears: [30, [Validators.required, Validators.min(1), Validators.max(40)]]
+      interestRate: [this.defaultRate, [Validators.required, Validators.min(0.1)]],
+      termInYears: [30, [Validators.required, Validators.min(1), Validators.max(40)]],
+      calculationMethod: ['shpitzer', Validators.required]
+    });
+  }
+  
+  ngOnInit(): void {
+    this.loadCurrentInterestRate();
+  }
+  
+  loadCurrentInterestRate(): void {
+    this.loadingRate = true;
+    this.interestRateService.getAverageInterestRate().subscribe({
+      next: (rate) => {
+        this.defaultRate = rate;
+        this.loanForm.get('interestRate')?.setValue(rate);
+        this.loadingRate = false;
+      },
+      error: () => {
+        this.loadingRate = false;
+      }
+    });
+  }
+  
+  loadMortgageRate(): void {
+    this.loadingRate = true;
+    this.interestRateService.getAverageMortgageRate().subscribe({
+      next: (rate) => {
+        this.defaultRate = rate;
+        this.loanForm.get('interestRate')?.setValue(rate);
+        this.loadingRate = false;
+      },
+      error: () => {
+        this.loadingRate = false;
+      }
+    });
+  }
+  
+  loadLoanRate(): void {
+    this.loadingRate = true;
+    this.interestRateService.getAverageLoanRate().subscribe({
+      next: (rate) => {
+        this.defaultRate = rate;
+        this.loanForm.get('interestRate')?.setValue(rate);
+        this.loadingRate = false;
+      },
+      error: () => {
+        this.loadingRate = false;
+      }
     });
   }
 
@@ -52,7 +113,8 @@ export class LoanCalculatorComponent {
     const request: LoanCalculationRequest = {
       LoanAmount: formValues.loanAmount,
       InterestRate: formValues.interestRate,
-      TermInYears: formValues.termInYears
+      TermInYears: formValues.termInYears,
+      CalculationMethod: formValues.calculationMethod
     };
 
     // First try to get existing payments using the GET endpoint
@@ -83,8 +145,9 @@ export class LoanCalculatorComponent {
   resetForm(): void {
     this.loanForm.reset({
       loanAmount: 100000,
-      interestRate: 5.5,
-      termInYears: 30
+      interestRate: this.defaultRate,
+      termInYears: 30,
+      calculationMethod: 'shpitzer'
     });
     this.loanService.clearCalculationResult();
     this.error = '';

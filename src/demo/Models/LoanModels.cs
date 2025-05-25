@@ -12,6 +12,7 @@ namespace demo.Models
         public decimal MonthlyPayment { get; set; }
         public List<MonthlyPaymentDetail> PaymentSchedule { get; set; } = new List<MonthlyPaymentDetail>();
         public DateTime CalculationDate { get; set; } = DateTime.UtcNow;
+        public string CalculationMethod { get; set; } = "Shpitzer"; // Default to Shpitzer
     }
 
     public class MonthlyPaymentDetail
@@ -28,5 +29,6 @@ namespace demo.Models
         public double LoanAmount { get; set; }
         public double InterestRate { get; set; }
         public int TermInYears { get; set; }
+        public string CalculationMethod { get; set; } = "Shpitzer"; // Default to Shpitzer
     }
 }

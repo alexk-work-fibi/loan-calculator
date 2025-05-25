@@ -119,11 +119,54 @@ export class PaymentScheduleComponent implements OnInit, OnDestroy {
   private compare(a: number, b: number, isAsc: boolean): number {
     return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
   }
+  
+  getCalculationMethodLabel(): string {
+    if (!this.calculationResult || !this.calculationResult.CalculationMethod) {
+      return 'Shpitzer (Fixed Payment)';
+    }
+    
+    switch (this.calculationResult.CalculationMethod.toLowerCase()) {
+      case 'fixedprincipal':
+        return 'Fixed Principal (קרן קבועה)';
+      case 'shpitzer':
+      default:
+        return 'Shpitzer (שפיצר)';
+    }
+  }
 
   private updateChartData(): void {
     if (!this.calculationResult) return;
 
-    // Create principal vs interest chart data
+    // Create chart data based on calculation method
+    if (this.calculationResult.CalculationMethod === 'fixedprincipal') {
+      this.createFixedPrincipalChartData();
+    } else {
+      this.createShpitzerChartData();
+    }
+    
+    // Create pie chart data
+    // Calculate total principal and interest
+    const totalPrincipal = this.calculationResult.LoanAmount;
+    const totalInterest = this.calculationResult.PaymentSchedule.reduce(
+      (sum, payment) => sum + payment.Interest, 0
+    );
+    
+    this.pieChartData = [
+      {
+        name: 'Principal',
+        value: totalPrincipal
+      },
+      {
+        name: 'Total Interest',
+        value: totalInterest
+      }
+    ];
+  }
+  
+  private createShpitzerChartData(): void {
+    if (!this.calculationResult) return;
+    
+    // For Shpitzer, show principal, interest, and remaining balance
     const principal = {
       name: 'Principal',
       series: this.calculationResult.PaymentSchedule
@@ -155,23 +198,42 @@ export class PaymentScheduleComponent implements OnInit, OnDestroy {
     };
 
     this.chartData = [principal, interest, remainingBalance];
+  }
+  
+  private createFixedPrincipalChartData(): void {
+    if (!this.calculationResult) return;
     
-    // Create pie chart data
-    // Calculate total principal and interest
-    const totalPrincipal = this.calculationResult.LoanAmount;
-    const totalInterest = this.calculationResult.PaymentSchedule.reduce(
-      (sum, payment) => sum + payment.Interest, 0
-    );
+    // For Fixed Principal, show total payment, principal, and interest
+    const totalPayment = {
+      name: 'Total Payment',
+      series: this.calculationResult.PaymentSchedule
+        .filter((_, index) => index % 12 === 0) // Show yearly data points to avoid overcrowding
+        .map(payment => ({
+          name: payment.PaymentNumber,
+          value: payment.Payment
+        }))
+    };
     
-    this.pieChartData = [
-      {
-        name: 'Principal',
-        value: totalPrincipal
-      },
-      {
-        name: 'Total Interest',
-        value: totalInterest
-      }
-    ];
+    const principal = {
+      name: 'Principal (Fixed)',
+      series: this.calculationResult.PaymentSchedule
+        .filter((_, index) => index % 12 === 0)
+        .map(payment => ({
+          name: payment.PaymentNumber,
+          value: payment.Principal
+        }))
+    };
+
+    const interest = {
+      name: 'Interest (Decreasing)',
+      series: this.calculationResult.PaymentSchedule
+        .filter((_, index) => index % 12 === 0)
+        .map(payment => ({
+          name: payment.PaymentNumber,
+          value: payment.Interest
+        }))
+    };
+
+    this.chartData = [totalPayment, principal, interest];
   }
 }
