@@ -4,6 +4,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatCardModule } from '@angular/material/card';
+import { MatTabsModule } from '@angular/material/tabs';
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { LoanService } from '../../services/loan.service';
 import { LoanCalculationResult, MonthlyPaymentDetail } from '../../models/loan-models';
@@ -18,6 +19,7 @@ import { Subscription } from 'rxjs';
     MatPaginatorModule,
     MatSortModule,
     MatCardModule,
+    MatTabsModule,
     NgxChartsModule
   ],
   templateUrl: './payment-schedule.component.html',
@@ -26,19 +28,24 @@ import { Subscription } from 'rxjs';
 export class PaymentScheduleComponent implements OnInit, OnDestroy {
   calculationResult: LoanCalculationResult | null = null;
   displayedColumns: string[] = ['PaymentNumber', 'Payment', 'Principal', 'Interest', 'RemainingBalance'];
-  dataSource: MonthlyPaymentDetail[] = [];
+  sortedData: MonthlyPaymentDetail[] = [];
+  paginatedData: MonthlyPaymentDetail[] = [];
+  sortColumn: string = 'PaymentNumber';
+  sortDirection: 'asc' | 'desc' = 'asc';
   pageSize = 12;
   pageSizeOptions = [12, 24, 36, 60];
-  pageEvent?: PageEvent;
+  pageIndex = 0;
   private subscription!: Subscription;
 
   // Chart data
   chartData: any[] = [];
+  pieChartData: any[] = [];
+  selectedTabIndex = 0;
   showXAxis = true;
   showYAxis = true;
   gradient = false;
   showLegend = true;
-  legendPosition = 'below';
+  legendPosition: any = 'below';
   showXAxisLabel = true;
   xAxisLabel = 'Payment Number';
   showYAxisLabel = true;
@@ -53,11 +60,13 @@ export class PaymentScheduleComponent implements OnInit, OnDestroy {
     this.subscription = this.loanService.calculationResult$.subscribe(result => {
       if (result && result.PaymentSchedule && result.PaymentSchedule.length > 0) {
         this.calculationResult = result;
-        this.dataSource = result.PaymentSchedule;
+        this.sortedData = [...result.PaymentSchedule];
+        this.sortData(this.sortColumn); // Initial sort
         this.updateChartData();
       } else {
         this.calculationResult = null;
-        this.dataSource = [];
+        this.sortedData = [];
+        this.paginatedData = [];
         this.chartData = [];
       }
     });
@@ -68,7 +77,47 @@ export class PaymentScheduleComponent implements OnInit, OnDestroy {
   }
 
   handlePageEvent(event: PageEvent): void {
-    this.pageEvent = event;
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.updatePaginatedData();
+  }
+
+  sortData(column: string): void {
+    if (this.sortColumn === column) {
+      // Toggle direction if same column
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      // Default to ascending for new column
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+
+    // Sort the data
+    this.sortedData = [...this.calculationResult?.PaymentSchedule || []].sort((a, b) => {
+      const isAsc = this.sortDirection === 'asc';
+      switch (column) {
+        case 'PaymentNumber': return this.compare(a.PaymentNumber, b.PaymentNumber, isAsc);
+        case 'Payment': return this.compare(a.Payment, b.Payment, isAsc);
+        case 'Principal': return this.compare(a.Principal, b.Principal, isAsc);
+        case 'Interest': return this.compare(a.Interest, b.Interest, isAsc);
+        case 'RemainingBalance': return this.compare(a.RemainingBalance, b.RemainingBalance, isAsc);
+        default: return 0;
+      }
+    });
+    
+    // Reset to first page when sorting
+    this.pageIndex = 0;
+    this.updatePaginatedData();
+  }
+  
+  private updatePaginatedData(): void {
+    const start = this.pageIndex * this.pageSize;
+    const end = start + this.pageSize;
+    this.paginatedData = this.sortedData.slice(start, end);
+  }
+
+  private compare(a: number, b: number, isAsc: boolean): number {
+    return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
   }
 
   private updateChartData(): void {
@@ -106,5 +155,23 @@ export class PaymentScheduleComponent implements OnInit, OnDestroy {
     };
 
     this.chartData = [principal, interest, remainingBalance];
+    
+    // Create pie chart data
+    // Calculate total principal and interest
+    const totalPrincipal = this.calculationResult.LoanAmount;
+    const totalInterest = this.calculationResult.PaymentSchedule.reduce(
+      (sum, payment) => sum + payment.Interest, 0
+    );
+    
+    this.pieChartData = [
+      {
+        name: 'Principal',
+        value: totalPrincipal
+      },
+      {
+        name: 'Total Interest',
+        value: totalInterest
+      }
+    ];
   }
 }
